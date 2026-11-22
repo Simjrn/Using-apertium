@@ -3,7 +3,7 @@ import streamlit as st
 
 st.title("Apertium Translator")
 
-LANGS = {"English": "eng", "Spanish": "spa", "Catalan": "cat", "French": "fra", "Arpitan": "arp"}
+LANGS = {"English": "eng", "Spanish": "spa", "Catalan": "cat", "French": "fra", "Arpitan": "frp"}
 
 col1, col2 = st.columns(2)
 src_lang = col1.selectbox("From", list(LANGS.keys()), index=0)
