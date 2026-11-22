@@ -13,30 +13,23 @@ text = st.text_area("Enter text to translate:", "Hello, world!")
 
 if st.button("Translate"):
   if text.strip():
-    url = "https://apertium.org"
-    params = {"langpair": f"{LANGS[src_lang]}|{LANGS[tgt_lang]}", "q": text}
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        ),
-        "Accept": "application/json",
+    # Use beta.apertium.org and POST form data so it hits the APy backend directly
+    url = "https://beta.apertium.org/apy/translate"
+    payload = {
+        "langpair": f"{LANGS[src_lang]}|{LANGS[tgt_lang]}",
+        "q": text,
+        "markUnknown": "no",
     }
 
     try:
-      response = requests.get(url, params=params, headers=headers, timeout=15)
+      response = requests.post(url, data=payload, timeout=15)
+      response.raise_for_status()
+      data = response.json()
 
-      # Check if the response is actually JSON before parsing
-      if "application/json" not in response.headers.get("Content-Type", ""):
-        st.error(f"Server returned non-JSON (Status {response.status_code}):")
-        st.code(response.text[:500])  # Shows the HTML error or blank body
+      if data.get("responseStatus") == 200:
+        st.success(data["responseData"]["translatedText"])
       else:
-        data = response.json()
-        if data.get("responseStatus") == 200:
-          st.success(data["responseData"]["translatedText"])
-        else:
-          st.error(
-              data.get("responseDetails", "Language pair not supported.")
-          )
+        st.error(data.get("responseDetails", "Language pair not supported."))
 
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
       st.error(f"Request failed: {e}")
