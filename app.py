@@ -3,7 +3,6 @@ import streamlit as st
 
 st.title("Apertium Translator")
 
-# Language codes (use 3-letter ISO 639-3 codes like 'eng', 'spa', 'cat')
 LANGS = {"English": "eng", "Spanish": "spa", "Catalan": "cat", "French": "fra"}
 
 col1, col2 = st.columns(2)
@@ -16,14 +15,28 @@ if st.button("Translate"):
   if text.strip():
     url = "https://apertium.org"
     params = {"langpair": f"{LANGS[src_lang]}|{LANGS[tgt_lang]}", "q": text}
-    try:
-      response = requests.get(url, params=params, timeout=10)
-      response.raise_for_status()
-      data = response.json()
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        ),
+        "Accept": "application/json",
+    }
 
-      if data.get("responseStatus") == 200:
-        st.success(data["responseData"]["translatedText"])
+    try:
+      response = requests.get(url, params=params, headers=headers, timeout=15)
+
+      # Check if the response is actually JSON before parsing
+      if "application/json" not in response.headers.get("Content-Type", ""):
+        st.error(f"Server returned non-JSON (Status {response.status_code}):")
+        st.code(response.text[:500])  # Shows the HTML error or blank body
       else:
-        st.error(data.get("responseDetails", "Language pair not supported."))
+        data = response.json()
+        if data.get("responseStatus") == 200:
+          st.success(data["responseData"]["translatedText"])
+        else:
+          st.error(
+              data.get("responseDetails", "Language pair not supported.")
+          )
+
     except requests.exceptions.RequestException as e:
-      st.error(f"API request failed: {e}")
+      st.error(f"Request failed: {e}")
